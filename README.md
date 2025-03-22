@@ -11,7 +11,7 @@ This application generates a Software Bill of Materials (SBOM) for a container i
 ### Installing Syft and Grype
 
 ```bash
-# Install Syft (Windows with Scoop)
+# Install Syft
 scoop install syft
 
 # Install Grype 

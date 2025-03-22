@@ -9,12 +9,16 @@ This application generates a Software Bill of Materials (SBOM) for a container i
 - Grype - For vulnerability scanning
 
 ### Installing Syft and Grype
+Official Docs for Device Specific Installations:
+- [Syft Installation](https://github.com/anchore/syft#installation)
+- [Grype Installation](https://github.com/anchore/grype#installation)
+
 
 ```bash
-# Install Syft (Windows with Scoop)
+# Install Syft
 scoop install syft
 
-# Install Grype 
+# Install Grype(community version/windows sucks)
 choco install grype
 
 ```

@@ -47,6 +47,7 @@ python sbom_scanner.py [IMAGE] [OPTIONS]
 - `--sbom-format`: SBOM output format (json, cyclonedx-json, spdx-json) (default: json)
 - `--vuln-format`: Vulnerability report format (table, json, cyclonedx-json) (default: table)
 - `--output-dir`: Custom output directory (default: auto-generated timestamped directory)
+- `--skip-sbom`: Skip SBOM generation and scan for vulnerabilities directly with Grype
 
 ### Examples
 
@@ -62,12 +63,21 @@ python sbom_scanner.py ubuntu:20.04 --vuln-format json
 
 # Specify a custom output directory
 python sbom_scanner.py debian:latest --output-dir my_scan_results
+
+# Skip SBOM generation and scan directly for vulnerabilities
+python sbom_scanner.py node:14 --skip-sbom
+
+# Skip SBOM and output vulnerabilities in JSON format
+python sbom_scanner.py php:7.2-apache --skip-sbom --vuln-format json
 ```
 
 ## How It Works
 
 1. The application takes a container image as input
 2. It creates a timestamped directory to store scan results
-3. It generates an SBOM using Syft and saves it in the output directory
-4. It then scans for vulnerabilities using Grype with the generated SBOM and saves the report in the output directory
+3. If not using `--skip-sbom`:
+   - It generates an SBOM using Syft and saves it in the output directory
+   - It then scans for vulnerabilities using Grype with the generated SBOM and saves the report in the output directory
+4. If using `--skip-sbom`:
+   - It directly scans for vulnerabilities using Grype on the container image
 5. Results are displayed in the console and saved to files for later reference

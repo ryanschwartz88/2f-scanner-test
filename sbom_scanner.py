@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import datetime
 import re
 
@@ -80,9 +81,9 @@ def generate_sbom(image_name, output_dir, output_format="json"):
     print(f"SBOM generated and saved to: {output_file}")
     return output_file
 
-def scan_vulnerabilities(image_name, sbom_file, output_dir, output_format="table"):
+def scan_vulnerabilities_with_sbom(image_name, sbom_file, output_dir, output_format="table"):
     """Scan for vulnerabilities using Grype with the generated SBOM."""
-    print(f"Scanning for vulnerabilities in image: {image_name}")
+    print(f"Scanning for vulnerabilities in image: {image_name} using SBOM")
     
     # Set output file path
     output_file = os.path.join(output_dir, f"vulnerabilities.{output_format}")
@@ -98,7 +99,30 @@ def scan_vulnerabilities(image_name, sbom_file, output_dir, output_format="table
     run_command(command)
     print(f"Vulnerability report saved to: {output_file}")
     
-    # Display summary of findings
+    return output_file
+
+def scan_vulnerabilities_direct(image_name, output_dir, output_format="table"):
+    """Scan for vulnerabilities directly using Grype on the container image."""
+    print(f"Scanning for vulnerabilities directly in image: {image_name}")
+    
+    # Set output file path
+    output_file = os.path.join(output_dir, f"vulnerabilities.{output_format}")
+    
+    # Adjust command based on output format
+    if output_format == "table":
+        # For table format, we need to redirect output
+        command = f"grype {image_name} --output {output_format} > {output_file}"
+    else:
+        # For other formats, grype can write directly to file
+        command = f"grype {image_name} --output {output_format} --file {output_file}"
+    
+    run_command(command)
+    print(f"Vulnerability report saved to: {output_file}")
+    
+    return output_file
+
+def display_vulnerability_summary(output_file, output_format):
+    """Display a summary of vulnerability findings."""
     try:
         if output_format == "json":
             with open(output_file, 'r') as f:
@@ -129,6 +153,8 @@ def main():
     parser.add_argument("--vuln-format", choices=["table", "json", "cyclonedx-json"], default="table",
                         help="Vulnerability report format (default: table)")
     parser.add_argument("--output-dir", help="Custom output directory (default: auto-generated)")
+    parser.add_argument("--skip-sbom", action="store_true", 
+                        help="Skip SBOM generation and scan for vulnerabilities directly")
     
     args = parser.parse_args()
     
@@ -138,11 +164,18 @@ def main():
     # Create output directory
     output_dir = args.output_dir if args.output_dir else create_output_directory(args.image)
     
-    # Generate SBOM
-    sbom_file = generate_sbom(args.image, output_dir, args.sbom_format)
+    if args.skip_sbom:
+        # Scan for vulnerabilities directly
+        output_file = scan_vulnerabilities_direct(args.image, output_dir, args.vuln_format)
+    else:
+        # Generate SBOM
+        sbom_file = generate_sbom(args.image, output_dir, args.sbom_format)
+        
+        # Scan for vulnerabilities using SBOM
+        output_file = scan_vulnerabilities_with_sbom(args.image, sbom_file, output_dir, args.vuln_format)
     
-    # Scan for vulnerabilities
-    scan_vulnerabilities(args.image, sbom_file, output_dir, args.vuln_format)
+    # Display vulnerability summary
+    display_vulnerability_summary(output_file, args.vuln_format)
     
     print(f"\nAll scan results are available in the directory: {output_dir}")
 
